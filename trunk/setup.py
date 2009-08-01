@@ -34,7 +34,7 @@ for dir in source_dirs:
 # Additional Windows dependencies
 if sys.platform == 'win32':
     define_macros.append(('WIN32', None))
-    libraries.append('ws2_32')
+    libraries.extend(['ws2_32', 'winmm'])
 
 # Go force and multiply
 setup(name="enet", version="1.2",
