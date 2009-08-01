@@ -113,7 +113,7 @@ cdef extern from "enet/enet.h" :
   int enet_address_set_host (ENetAddress *address, char *hostName)
   int enet_address_get_host (ENetAddress *address, char *hostName, size_t nameLength)
 
-  ENetPacket *  enet_packet_create    (void *dataContents, size_t dataLength, enet_uint32 flags)
+  ENetPacket *  enet_packet_create    (char *dataContents, size_t dataLength, enet_uint32 flags)
   void          enet_packet_destroy   (ENetPacket *packet)
   int           enet_packet_resize    (ENetPacket *packet, size_t dataLength)
 
@@ -242,7 +242,7 @@ cdef class Packet :
 
   cdef ENetPacket  *_enet_packet
 
-  def __init__ (self, char *dataContents = "", flags = 0) :
+  def __init__ (self, dataContents = "", flags = 0) :
     if dataContents or flags :
       self._enet_packet = enet_packet_create (dataContents, len (dataContents), flags)
 
