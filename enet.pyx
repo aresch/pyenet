@@ -90,6 +90,7 @@ cdef extern from "enet/enet.h" :
     enet_uint32   packetThrottleDeceleration
     enet_uint32   packetThrottleInterval
     enet_uint32   roundTripTime
+    enet_uint16   incomingPeerID
 
   ctypedef struct ENetHost :
     ENetSocket    socket
@@ -287,6 +288,7 @@ cdef class Peer :
     int     packetThrottleDeceleration
     int     packetThrottleInterval
     int     roundTripTime                           Mean round trip time (RTT), in milliseconds, between sending a reliable packet and receiving its acknowledgement.
+    short   incomingPeerID
 
   DESCRIPTION
 
@@ -361,6 +363,8 @@ cdef class Peer :
         return self._enet_peer.packetThrottleDeceleration
       elif name == "roundTripTime" :
         return self._enet_peer.roundTripTime
+      elif name == "incomingPeerID" :
+        return self._enet_peer.incomingPeerID
       else :
         raise AttributeError ("Peer object has no attribute '" + name + "'")
     else :
