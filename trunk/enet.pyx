@@ -109,9 +109,11 @@ cdef extern from "enet/enet.h" :
     ENetPacket     *packet
 
   int   enet_initialize     ()
+  #int   enet_initialize_with_callbacks(ENetVersion version, ENetCallbacks *inits)
   void  enet_deinitialize   ()
 
   int enet_address_set_host (ENetAddress *address, char *hostName)
+  int enet_address_get_host_ip (ENetAddress *address, char *hostName, size_t nameLength)
   int enet_address_get_host (ENetAddress *address, char *hostName, size_t nameLength)
 
   ENetPacket *  enet_packet_create    (char *dataContents, size_t dataLength, enet_uint32 flags)
@@ -121,6 +123,7 @@ cdef extern from "enet/enet.h" :
   ENetHost *  enet_host_create              (ENetAddress *address, size_t peerCount, enet_uint32 incomingBandwidth, enet_uint32 outgoingBandwidth)
   void        enet_host_destroy             (ENetHost *host)
   ENetPeer *  enet_host_connect             (ENetHost *host, ENetAddress *address, size_t channelCount)
+  int         enet_host_check_events        (ENetHost *host, ENetEvent *event)
   int         enet_host_service             (ENetHost *host, ENetEvent *event, enet_uint32 timeout)
   void        enet_host_flush               (ENetHost *host)
   void        enet_host_broadcast           (ENetHost *host, enet_uint8 channelID, ENetPacket *packet)
@@ -233,7 +236,7 @@ cdef class Packet :
 
   ATTRIBUTES
 
-    str data                        Contains the data for the packet.
+    char *data                        Contains the data for the packet.
     int flags                       Flags modifying delivery of the Packet:
       enet.PACKET_FLAG_RELIABLE         Packet must be received by the target peer and resend attempts should be made until the packet is delivered.
 
