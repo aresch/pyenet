@@ -91,6 +91,7 @@ cdef extern from "enet/enet.h" :
     enet_uint32   packetThrottleInterval
     enet_uint32   roundTripTime
     enet_uint16   incomingPeerID
+    char          *data
 
   ctypedef struct ENetHost :
     ENetSocket    socket
@@ -368,6 +369,8 @@ cdef class Peer :
         return self._enet_peer.roundTripTime
       elif name == "incomingPeerID" :
         return self._enet_peer.incomingPeerID
+      elif name == "data":
+        return self._enet_peer.data
       else :
         raise AttributeError ("Peer object has no attribute '" + name + "'")
     else :
@@ -381,6 +384,8 @@ cdef class Peer :
         enet_peer_throttle_configure (self._enet_peer, self._enet_peer.packetThrottleInterval, value, self._enet_peer.packetThrottleDeceleration)
       elif name == "packetThrottleDeceleration" :
         enet_peer_throttle_configure (self._enet_peer, self._enet_peer.packetThrottleInterval, self._enet_peer.packetThrottleAcceleration, value)
+      elif name == "data":
+        self._enet_peer.data = value
       else :
         raise AttributeError ("Peer object has no attribute '" + name + "'")
     else :
