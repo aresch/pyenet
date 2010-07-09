@@ -121,9 +121,9 @@ cdef extern from "enet/enet.h" :
   void          enet_packet_destroy   (ENetPacket *packet)
   int           enet_packet_resize    (ENetPacket *packet, size_t dataLength)
 
-  ENetHost *  enet_host_create              (ENetAddress *address, size_t peerCount, enet_uint32 incomingBandwidth, enet_uint32 outgoingBandwidth)
+  ENetHost *  enet_host_create              (ENetAddress *address, size_t peerCount, size_t channelLimit, enet_uint32 incomingBandwidth, enet_uint32 outgoingBandwidth)
   void        enet_host_destroy             (ENetHost *host)
-  ENetPeer *  enet_host_connect             (ENetHost *host, ENetAddress *address, size_t channelCount)
+  ENetPeer *  enet_host_connect             (ENetHost *host, ENetAddress *address, size_t channelCount, enet_uint32 data)
   int         enet_host_check_events        (ENetHost *host, ENetEvent *event)
   int         enet_host_service             (ENetHost *host, ENetEvent *event, enet_uint32 timeout)
   void        enet_host_flush               (ENetHost *host)
@@ -457,13 +457,13 @@ cdef class Host :
   cdef enet_uint32  _enet_incomingBandwidth
   cdef enet_uint32  _enet_outgoingBandwidth
 
-  def __init__ (self, Address address = None, peerCount = 0, incomingBandwidth = 0, outgoingBandwidth = 0) :
+  def __init__ (self, Address address = None, peerCount = 0, channelLimit = 0, incomingBandwidth = 0, outgoingBandwidth = 0) :
     (self._enet_incomingBandwidth, self._enet_outgoingBandwidth) = (incomingBandwidth, outgoingBandwidth)
 
     if address :
-      self._enet_host = enet_host_create (&address._enet_address, peerCount, incomingBandwidth, outgoingBandwidth)
+      self._enet_host = enet_host_create (&address._enet_address, peerCount, channelLimit, incomingBandwidth, outgoingBandwidth)
     else :
-      self._enet_host = enet_host_create (NULL, peerCount, incomingBandwidth, outgoingBandwidth)
+      self._enet_host = enet_host_create (NULL, peerCount, channelLimit, incomingBandwidth, outgoingBandwidth)
 
     if not self._enet_host :
       raise MemoryError ("Unable to create host structure!")
@@ -472,14 +472,14 @@ cdef class Host :
     if self._enet_host :
       enet_host_destroy (self._enet_host)
 
-  def connect (self, Address address, channelCount) :
-    """Peer connect (Address address, int channelCount)
+  def connect (self, Address address, channelCount, data) :
+    """Peer connect (Address address, int channelCount, int data)
 
     Initiates a connection to a foreign host."""
 
     if self._enet_host :
       peer = Peer ()
-      (<Peer> peer)._enet_peer = enet_host_connect (self._enet_host, &address._enet_address, channelCount)
+      (<Peer> peer)._enet_peer = enet_host_connect (self._enet_host, &address._enet_address, channelCount, data)
 
       if not (<Peer> peer)._enet_peer :
         raise IOError ("Connection failure!")
