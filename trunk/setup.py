@@ -11,12 +11,13 @@ import sys, os, os.path
 from distutils.core import setup, Extension
 
 source_dirs = ['enet']
-define_macros = [('HAS_GETHOSTBYNAME_R', None),
-                 ('HAS_GETHOSTBYADDR_R', None),
-                 ('HAS_POLL', None),
+define_macros = [('HAS_POLL', None),
                  ('HAS_FCNTL', None),
                  ('HAS_MSGHDR_FLAGS', None),
                  ('HAS_SOCKLEN_T', None) ]
+
+if sys.platform != 'darwin':
+    define_macros.extend([('HAS_GETHOSTBYNAME_R', None), ('HAS_GETHOSTBYADDR_R', None)])
 
 libraries = []
 
@@ -37,7 +38,7 @@ if sys.platform == 'win32':
     libraries.extend(['ws2_32', 'winmm'])
 
 # Go force and multiply
-setup(name="enet", version="1.2",
+setup(name="enet", version="1.3",
       ext_modules=[Extension("enet",
                              source_files,
                              include_dirs=["enet/include/"],
