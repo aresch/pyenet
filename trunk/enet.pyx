@@ -348,6 +348,14 @@ cdef class Peer :
     if self._enet_peer :
       enet_peer_disconnect (self._enet_peer, 0)
 
+  def disconnect_later (self) :
+    """disconnect_later ()
+
+    Request a disconnection from a peer, but only after all queued outgoing packets are sent."""
+
+    if self._enet_peer :
+      enet_peer_disconnect_later (self._enet_peer, 0)
+
   def __getattr__ (self, name) :
     if self._enet_peer :
       if name == "address" :
