@@ -206,6 +206,19 @@ cdef class Address :
         maxhostname = 257   # We'll follow Solaris' standard.
         host = PyString_FromStringAndSize (NULL, maxhostname)
 
+        if enet_address_get_host_ip (&self._enet_address, host, maxhostname) :
+          raise IOError ("Resolution failure!")
+
+        return PyString_FromString (host)
+      else :
+        assert (not ENET_HOST_ANY)
+    elif name == "hostname" :
+      if self._enet_address.host == ENET_HOST_ANY :
+        return "*"
+      elif self._enet_address.host :
+        maxhostname = 257   # We'll follow Solaris' standard.
+        host = PyString_FromStringAndSize (NULL, maxhostname)
+
         if enet_address_get_host (&self._enet_address, host, maxhostname) :
           raise IOError ("Resolution failure!")
 
