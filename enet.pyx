@@ -493,7 +493,7 @@ cdef class Host :
     if self._enet_host :
       enet_host_destroy (self._enet_host)
 
-  def connect (self, Address address, channelCount, data) :
+  def connect (self, Address address, channelCount, data=0) :
     """Peer connect (Address address, int channelCount, int data)
 
     Initiates a connection to a foreign host."""
@@ -597,8 +597,8 @@ class test :
   def test (self) :
     print "Starting services..."
 
-    host1 = Host (None, 1, 0, 0)
-    host2 = Host (Address ("localhost", 6666), 1, 0, 0)
+    host1 = Host (None, 1, 0, 0, 0)
+    host2 = Host (Address ("localhost", 6666), 1, 0, 0, 0)
 
     print "Connecting %s (client) to %s (server)..." % (host1, host2)
 
