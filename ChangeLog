@@ -1,3 +1,11 @@
+==== pyenet 1.3 (In Development) ====
+  * Rewrote to build with Cython instead of Pyrex
+  * Fixed bug where a double-free would happen because the Event object would
+    create a new Packet object every time the packet attribute was accessed.
+  * Add some unit testing
+  * Add test_server and test_client
+  * Builds against enet 1.3
+
 ==== pyenet 1.2 (In Development) ====
 
   * Fix build against current enet CVS trunk

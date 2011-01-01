@@ -1,50 +1,71 @@
-#!/usr/bin/env python
-
-# see http://www.python.org/doc/current/dist/setup-script.html
-#  for distutil options.
 #
-# Original version by Rene Dudfield <illumen@yahoo.com>
-# Modifications by Andrew Resch <andrewresch@gmail.com>
+# setup.py
+#
+# Copyright (C) 2010 Andrew Resch <andrewresch@gmail.com>
+#
+# pyenet is free software.
+#
+# You may redistribute it and/or modify it under the terms of the
+# GNU General Public License, as published by the Free Software
+# Foundation; either version 3 of the License, or (at your option)
+# any later version.
+#
+# pyenet is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with deluge.    If not, write to:
+#     The Free Software Foundation, Inc.,
+#     51 Franklin Street, Fifth Floor
+#     Boston, MA  02110-1301, USA.
 #
 
-import sys, os, os.path
-from distutils.core import setup, Extension
+from distutils.core import setup
+from distutils.extension import Extension
+from Cython.Distutils import build_ext
 
-source_dirs = ['enet']
+import glob
+import sys
+
+source_files = ["enet.pyx"]
+
+_enet_files = glob.glob("enet/*.c")
+
+if not _enet_files:
+    print "You need to download and extract the enet 1.3 source to enet/"
+    print "Download the source from: http://enet.bespin.org/SourceDistro.html"
+    print "See the README for more instructions"
+    sys.exit(1)
+
+source_files.extend(_enet_files)
+
 define_macros = [('HAS_POLL', None),
                  ('HAS_FCNTL', None),
                  ('HAS_MSGHDR_FLAGS', None),
                  ('HAS_SOCKLEN_T', None) ]
 
+libraries = []
+
+if sys.platform == 'win32':
+    define_macros.extend([('WIN32', None)])
+    libraries.extend(['ws2_32', 'Winmm'])
+
 if sys.platform != 'darwin':
     define_macros.extend([('HAS_GETHOSTBYNAME_R', None), ('HAS_GETHOSTBYADDR_R', None)])
 
-libraries = []
+ext_modules = [
+    Extension(
+        "enet",
+        extra_compile_args=["-O3"],
+        sources=source_files,
+        include_dirs=["enet/include/"],
+        define_macros=define_macros,
+        libraries=libraries)]
 
-# For enet.pyx
-
-os.system("pyrexc enet.pyx")
-source_files = ['enet.c']
-
-# Build a list of all the source files
-for dir in source_dirs:
-    for file in os.listdir(dir):
-        if '.c' == os.path.splitext(file)[1]:
-            source_files.append(dir + '/' + file)
-
-# Additional Windows dependencies
-if sys.platform == 'win32':
-    define_macros.append(('WIN32', None))
-    libraries.extend(['ws2_32', 'winmm'])
-
-# Go force and multiply
-setup(name="enet", version="1.3",
-      ext_modules=[Extension("enet",
-                             source_files,
-                             include_dirs=["enet/include/"],
-			     define_macros=define_macros,
-			     libraries=libraries,
-			     library_dirs=[]
-			    )
-		  ]
-    )
+setup(
+  name = 'enet',
+  cmdclass = {'build_ext': build_ext},
+  ext_modules = ext_modules
+)
