@@ -168,11 +168,15 @@ cdef class Address:
     cdef ENetAddress _enet_address
 
     def __init__(self, host, port):
-        self.host = host
+        if host is not None:
+            # Convert the hostname to a byte string if needed
+            self.host = host if isinstance(host, bytes) else bytes(host, "ascii")
+        else:
+            self.host = None
         self.port = port
 
     def __str__(self):
-        return "%s:%u" % (self.host, self.port)
+        return "{0}:{1}".format(self.host, self.port)
 
     def __richcmp__(self, obj, op):
         if isinstance(obj, Address):
@@ -194,7 +198,7 @@ cdef class Address:
             elif self._enet_address.host:
                 if enet_address_get_host_ip(&self._enet_address, host, MAXHOSTNAME):
                     raise IOError("Resolution failure!")
-                return host
+                return unicode(host, "ascii")
 
         def __set__(self, value):
             if not value or value == "*":
@@ -212,7 +216,7 @@ cdef class Address:
             elif self._enet_address.host:
                 if enet_address_get_host(&self._enet_address, host, MAXHOSTNAME):
                     raise IOError("Resolution failure!")
-                return host
+                return unicode(host, "ascii")
 
     property port:
         def __get__(self):

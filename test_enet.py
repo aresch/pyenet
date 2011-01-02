@@ -27,17 +27,17 @@ class TestAddress(unittest.TestCase):
 
 class TestPacket(unittest.TestCase):
     def test_data(self):
-        self.assertEquals(enet.Packet("foo\0bar").data, "foo\0bar")
+        self.assertEquals(enet.Packet(b"foo\0bar").data, b"foo\0bar")
         self.assertRaises(MemoryError, getattr, enet.Packet(), "data")
 
     def test_dataLength(self):
-        self.assertEquals(enet.Packet("foobar").dataLength, 6)
-        self.assertEquals(enet.Packet("foo\0bar").dataLength, 7)
+        self.assertEquals(enet.Packet(b"foobar").dataLength, 6)
+        self.assertEquals(enet.Packet(b"foo\0bar").dataLength, 7)
         self.assertRaises(MemoryError, getattr, enet.Packet(), "dataLength")
 
     def test_flags(self):
-        self.assertEquals(enet.Packet("foobar").flags, 0)
-        self.assertEquals(enet.Packet("foobar", enet.PACKET_FLAG_UNSEQUENCED).flags, enet.PACKET_FLAG_UNSEQUENCED)
+        self.assertEquals(enet.Packet(b"foobar").flags, 0)
+        self.assertEquals(enet.Packet(b"foobar", enet.PACKET_FLAG_UNSEQUENCED).flags, enet.PACKET_FLAG_UNSEQUENCED)
         self.assertRaises(MemoryError, getattr, enet.Packet(), "flags")
 
 class TestHost(unittest.TestCase):
@@ -73,7 +73,7 @@ class TestHost(unittest.TestCase):
 
     def test_broadcast(self):
         broadcast_done = False
-        broadcast_msg = "foo\0bar\n baz!"
+        broadcast_msg = b"foo\0bar\n baz!"
 
         while not broadcast_done:
             event = self.client.service(0)
@@ -104,7 +104,7 @@ class TestPeer(unittest.TestCase):
         self.assertRaises(MemoryError, enet.Peer().reset)
 
     def test_send(self):
-        msg = "foo\0bar"
+        msg = b"foo\0bar"
         msg_received = False
 
         while not msg_received:
