@@ -34,9 +34,9 @@ source_files = ["enet.pyx"]
 _enet_files = glob.glob("enet/*.c")
 
 if not _enet_files:
-    print "You need to download and extract the enet 1.3 source to enet/"
-    print "Download the source from: http://enet.bespin.org/SourceDistro.html"
-    print "See the README for more instructions"
+    print("You need to download and extract the enet 1.3 source to enet/")
+    print("Download the source from: http://enet.bespin.org/SourceDistro.html")
+    print("See the README for more instructions")
     sys.exit(1)
 
 source_files.extend(_enet_files)
