@@ -47,16 +47,52 @@ cdef extern from "enet/enet.h":
         ENET_PEER_STATE_ZOMBIE = 9
 
     ctypedef struct ENetPeer:
+        enet_uint16 incomingPeerID
+        enet_uint16 outgoingPeerID
+        enet_uint32 connectID
+        enet_uint8 outgoingSessionID
+        enet_uint8 incomingSessionID
         ENetAddress address
+        char *data
         ENetPeerState state
+        size_t channelCount
+        enet_uint32 incomingBandwidth
+        enet_uint32 outgoingBandwidth
+        enet_uint32 incomingBandwidthThrottleEpoch
+        enet_uint32 outgoingBandwidthThrottleEpoch
+        enet_uint32 incomingDataTotal
+        enet_uint32 outgoingDataTotal
+        enet_uint32 lastSendTime
+        enet_uint32 lastReceiveTime
+        enet_uint32 nextTimeout
+        enet_uint32 earliestTimeout
+        enet_uint32 packetLossEpoch
+        enet_uint32 packetsSent
+        enet_uint32 packetsLost
         enet_uint32 packetLoss
+        enet_uint32 packetLossVariance
+        enet_uint32 packetThrottle
+        enet_uint32 packetThrottleLimit
+        enet_uint32 packetThrottleCounter
+        enet_uint32 packetThrottleEpoch
         enet_uint32 packetThrottleAcceleration
         enet_uint32 packetThrottleDeceleration
         enet_uint32 packetThrottleInterval
+        enet_uint32 lastRoundTripTime
+        enet_uint32 lowestRoundTripTime
+        enet_uint32 lastRoundTripTimeVariance
+        enet_uint32 highestRoundTripTimeVariance
         enet_uint32 roundTripTime
-        enet_uint16 incomingPeerID
-        enet_uint16 outgoingPeerID
-        char *data
+        enet_uint32 roundTripTimeVariance
+        enet_uint32 mtu
+        enet_uint32 windowSize
+        enet_uint32 reliableDataInTransit
+        enet_uint16 outgoingReliableSequenceNumber
+        int needsDispatch
+        enet_uint16 incomingUnsequencedGroup
+        enet_uint16 outgoingUnsequencedGroup
+        enet_uint32 unsequencedWindow
+        enet_uint32 eventData
 
     ctypedef struct ENetHost:
         ENetSocket socket
@@ -423,6 +459,31 @@ cdef class Peer:
         else:
             raise MemoryError("Empty Peer object accessed!")
 
+    property incomingPeerID:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.incomingPeerID
+
+    property outgoingPeerID:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.outgoingPeerID
+
+    property connectID:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.connectID
+
+    property outgoingSessionID:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.outgoingSessionID
+                
+    property incomingSessionID:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.incomingSessionID
+               
     property address:
         def __get__(self):
             if self.check_valid():
@@ -430,26 +491,119 @@ cdef class Peer:
                 (<Address> a)._enet_address = self._enet_peer.address
                 return a
 
+    property data:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.data
+
+        def __set__(self, value):
+            if self.check_valid():
+                self._enet_peer.data = value
+
     property state:
         def __get__(self):
             if self.check_valid():
                 return self._enet_peer.state
+
+    property channelCount:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.channelCount
+
+    property incomingBandwidth:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.incomingBandwidth
+
+    property outgoingBandwidth:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.outgoingBandwidth
+
+    property incomingBandwidthThrottleEpoch:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.incomingBandwidthThrottleEpoch
+
+    property outgoingBandwidthThrottleEpoch:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.outgoingBandwidthThrottleEpoch
+
+    property incomingDataTotal:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.incomingDataTotal
+
+    property outgoingDataTotal:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.outgoingDataTotal
+
+    property lastSendTime:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.lastSendTime
+
+    property lastReceiveTime:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.lastReceiveTime
+
+    property nextTimeout:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.nextTimeout
+
+    property earliestTimeout:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.earliestTimeout
+
+    property packetLossEpoch:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.packetLossEpoch
+
+    property packetsSent:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.packetsSent
+
+    property packetsLost:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.packetsLost
 
     property packetLoss:
         def __get__(self):
             if self.check_valid():
                 return self._enet_peer.packetLoss
 
-    property packetThrottleInterval:
+    property packetLossVariance:
         def __get__(self):
             if self.check_valid():
-                return self._enet_peer.packetThrottleInterval
+                return self._enet_peer.packetLossVariance
 
-        def __set__(self, value):
+    property packetThrottle:
+        def __get__(self):
             if self.check_valid():
-                enet_peer_throttle_configure(
-                    self._enet_peer, value, self.packetThrottleAcceleration,
-                    self.packetThrottleDeceleration)
+                return self._enet_peer.packetThrottle
+
+    property packetThrottleLimit:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.packetThrottleLimit
+
+    property packetThrottleCounter:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.packetThrottleCounter
+
+    property packetThrottleEpoch:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.packetThrottleEpoch
 
     property packetThrottleAcceleration:
         def __get__(self):
@@ -473,24 +627,86 @@ cdef class Peer:
                     self.packetThrottleInterval,
                     self.packetThrottleAcceleration, value)
 
+    property packetThrottleInterval:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.packetThrottleInterval
+
+        def __set__(self, value):
+            if self.check_valid():
+                enet_peer_throttle_configure(
+                    self._enet_peer, value, self.packetThrottleAcceleration,
+                    self.packetThrottleDeceleration)
+
+    property lastRoundTripTime:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.lastRoundTripTime
+
+    property lowestRoundTripTime:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.lowestRoundTripTime
+
+    property lastRoundTripTimeVariance:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.lastRoundTripTimeVariance
+
+    property highestRoundTripTimeVariance:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.highestRoundTripTimeVariance
+
     property roundTripTime:
         def __get__(self):
             if self.check_valid():
                 return self._enet_peer.roundTripTime
 
-    property incomingPeerID:
+    property roundTripTimeVariance:
         def __get__(self):
             if self.check_valid():
-                return self._enet_peer.incomingPeerID
+                return self._enet_peer.roundTripTimeVariance
 
-    property data:
+    property mtu:
         def __get__(self):
             if self.check_valid():
-                return self._enet_peer.data
+                return self._enet_peer.mtu
 
-        def __set__(self, value):
+    property windowSize:
+        def __get__(self):
             if self.check_valid():
-                self._enet_peer.data = value
+                return self._enet_peer.windowSize
+
+    property reliableDataInTransit:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.reliableDataInTransit
+
+    property outgoingReliableSequenceNumber:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.outgoingReliableSequenceNumber
+
+    property needsDispatch:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.needsDispatch
+
+    property incomingUnsequencedGroup:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.incomingUnsequencedGroup
+
+    property outgoingUnsequencedGroup:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.outgoingUnsequencedGroup
+
+    property eventData:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.eventData
 
 cdef class Event:
     """
