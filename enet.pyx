@@ -11,7 +11,10 @@ cdef extern from "enet/types.h":
 cdef extern from "enet/enet.h":
 
     ctypedef enet_uint32 ENetVersion
-
+    # forward declaration
+    ctypedef struct ENetPeer
+    ctypedef struct ENetHost
+    
     cdef enum:
         ENET_HOST_ANY = 0
         ENET_HOST_BROADCAST = 0xFFFFFFFF
@@ -27,6 +30,7 @@ cdef extern from "enet/enet.h":
         ENET_PACKET_FLAG_RELIABLE = (1 << 0)
         ENET_PACKET_FLAG_UNSEQUENCED = (1 << 1)
         ENET_PACKET_FLAG_NO_ALLOCATE = (1 << 2)
+        ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT = (1 << 3)
 
     ctypedef struct ENetPacket:
         size_t referenceCount
@@ -47,8 +51,9 @@ cdef extern from "enet/enet.h":
         ENET_PEER_STATE_ZOMBIE = 9
 
     ctypedef struct ENetPeer:
-        enet_uint16 incomingPeerID
+        ENetHost *host
         enet_uint16 outgoingPeerID
+        enet_uint16 incomingPeerID
         enet_uint32 connectID
         enet_uint8 outgoingSessionID
         enet_uint8 incomingSessionID
@@ -97,6 +102,15 @@ cdef extern from "enet/enet.h":
     ctypedef struct ENetHost:
         ENetSocket socket
         ENetAddress address
+        enet_uint32 incomingBandwidth
+        enet_uint32 outgoingBandwidth
+        ENetPeer *peers
+        size_t peerCount
+        size_t channelLimit
+        enet_uint32 totalSentData
+        enet_uint32 totalSentPackets
+        enet_uint32 totalReceivedData
+        enet_uint32 totalReceivedPackets
 
     ctypedef enum ENetEventType:
         ENET_EVENT_TYPE_NONE = 0
@@ -111,7 +125,7 @@ cdef extern from "enet/enet.h":
         enet_uint32 data
         ENetPacket *packet
 
-    # Initalization
+    # Global functions
     int enet_initialize()
     void enet_deinitialize()
 
@@ -123,19 +137,22 @@ cdef extern from "enet/enet.h":
     # Packet functions
     ENetPacket* enet_packet_create(char *dataContents, size_t dataLength, enet_uint32 flags)
     void enet_packet_destroy(ENetPacket *packet)
-    int  enet_packet_resize(ENetPacket *packet, size_t dataLength)
+    int enet_packet_resize(ENetPacket *packet, size_t dataLength)
 
     # Host functions
+    int enet_host_compress_with_range_coder(ENetHost *host)
     ENetHost* enet_host_create(ENetAddress *address, size_t peerCount, size_t channelLimit, enet_uint32 incomingBandwidth, enet_uint32 outgoingBandwidth)
     void enet_host_destroy(ENetHost *host)
     ENetPeer* enet_host_connect(ENetHost *host, ENetAddress *address, size_t channelCount, enet_uint32 data)
-    int enet_host_check_events(ENetHost *host, ENetEvent *event)
-    int enet_host_service(ENetHost *host, ENetEvent *event, enet_uint32 timeout)
-    void enet_host_flush(ENetHost *host)
     void enet_host_broadcast(ENetHost *host, enet_uint8 channelID, ENetPacket *packet)
     void enet_host_channel_limit(ENetHost *host, size_t channelLimit)
     void enet_host_bandwidth_limit(ENetHost *host, enet_uint32 incomingBandwidth, enet_uint32 outgoingBandwidth)
+    void enet_host_flush(ENetHost *host)
+    int enet_host_check_events(ENetHost *host, ENetEvent *event)
+    int enet_host_service(ENetHost *host, ENetEvent *event, enet_uint32 timeout)
 
+    # Peer functions
+    void enet_peer_throttle_configure(ENetPeer *peer, enet_uint32 interval, enet_uint32 acceleration, enet_uint32 deacceleration)
     int enet_peer_send(ENetPeer *peer, enet_uint8 channelID, ENetPacket *packet)
     ENetPacket* enet_peer_receive(ENetPeer *peer, enet_uint8 *channelID)
     void enet_peer_ping(ENetPeer *peer)
@@ -143,7 +160,6 @@ cdef extern from "enet/enet.h":
     void enet_peer_disconnect(ENetPeer *peer, enet_uint32 data)
     void enet_peer_disconnect_now(ENetPeer *peer, enet_uint32 data)
     void enet_peer_disconnect_later(ENetPeer *peer, enet_uint32 data)
-    void enet_peer_throttle_configure(ENetPeer *peer, enet_uint32 interval, enet_uint32 acceleration, enet_uint32 deacceleration)
 
 cdef enum:
     MAXHOSTNAME = 257
@@ -151,6 +167,7 @@ cdef enum:
 PACKET_FLAG_RELIABLE = ENET_PACKET_FLAG_RELIABLE
 PACKET_FLAG_UNSEQUENCED = ENET_PACKET_FLAG_UNSEQUENCED
 PACKET_FLAG_NO_ALLOCATE = ENET_PACKET_FLAG_NO_ALLOCATE
+PACKET_FLAG_UNRELIABLE_FRAGMENT = ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT
 
 EVENT_TYPE_NONE = ENET_EVENT_TYPE_NONE
 EVENT_TYPE_CONNECT = ENET_EVENT_TYPE_CONNECT
@@ -280,6 +297,10 @@ cdef class Packet:
 
             enet.PACKET_FLAG_NO_ALLOCATE Packet will not allocate data and user
                                          must supply it instead.
+
+            enet.PACKET_FLAG_UNRELIABLE_FRAGMENT Packet will be fragmented using
+                                                 unreliable (instead of reliable)
+                                                 sends if it exceeds the MTU...
 
     DESCRIPTION
 
@@ -425,7 +446,7 @@ cdef class Peer:
         if self.check_valid():
             enet_peer_ping(self._enet_peer)
 
-    def disconnect(self):
+    def disconnect(self, data=0):
         """
         disconnect ()
 
@@ -433,9 +454,9 @@ cdef class Peer:
         """
 
         if self.check_valid():
-            enet_peer_disconnect(self._enet_peer, 0)
+            enet_peer_disconnect(self._enet_peer, data)
 
-    def disconnect_later(self):
+    def disconnect_later(self, data=0):
         """
         disconnect_later ()
 
@@ -444,7 +465,18 @@ cdef class Peer:
         """
 
         if self.check_valid():
-            enet_peer_disconnect_later(self._enet_peer, 0)
+            enet_peer_disconnect_later(self._enet_peer, data)
+
+    def disconnect_now(self, data=0):
+        """
+        disconnect_now ()
+
+        Force an immediate disconnection from a peer.
+        """
+
+        if self.check_valid():
+            enet_peer_disconnect_now(self._enet_peer, data)
+
 
     def check_valid(self):
         """
@@ -459,15 +491,24 @@ cdef class Peer:
         else:
             raise MemoryError("Empty Peer object accessed!")
 
-    property incomingPeerID:
+    property host:
         def __get__(self):
             if self.check_valid():
-                return self._enet_peer.incomingPeerID
+                # be a bit like pickle here. otherwise Host
+                # would create a new enet host inside __init__
+                h = Host.__new__(Host)
+                (<Host> h)._enet_host = self._enet_peer.host
+                return h
 
     property outgoingPeerID:
         def __get__(self):
             if self.check_valid():
                 return self._enet_peer.outgoingPeerID
+
+    property incomingPeerID:
+        def __get__(self):
+            if self.check_valid():
+                return self._enet_peer.incomingPeerID
 
     property connectID:
         def __get__(self):
@@ -478,12 +519,12 @@ cdef class Peer:
         def __get__(self):
             if self.check_valid():
                 return self._enet_peer.outgoingSessionID
-                
+
     property incomingSessionID:
         def __get__(self):
             if self.check_valid():
                 return self._enet_peer.incomingSessionID
-               
+
     property address:
         def __get__(self):
             if self.check_valid():
@@ -746,6 +787,10 @@ cdef class Event:
         def __get__(self):
             return self._enet_event.channelID
 
+    property data:
+        def __get__(self):
+            return self._enet_event.data
+
     property packet:
         def __get__(self):
             if not self._packet:
@@ -773,13 +818,10 @@ cdef class Host:
     """
 
     cdef ENetHost *_enet_host
-    cdef enet_uint32 _enet_incomingBandwidth
-    cdef enet_uint32 _enet_outgoingBandwidth
+    cdef bool dealloc
 
     def __init__ (self, Address address=None, peerCount=0, channelLimit=0,
         incomingBandwidth=0, outgoingBandwidth=0):
-
-        (self._enet_incomingBandwidth, self._enet_outgoingBandwidth) = (incomingBandwidth, outgoingBandwidth)
 
         if address:
             self._enet_host = enet_host_create(&address._enet_address, peerCount, channelLimit, incomingBandwidth, outgoingBandwidth)
@@ -788,9 +830,14 @@ cdef class Host:
 
         if not self._enet_host:
             raise MemoryError("Unable to create host structure!")
+        self.dealloc = True
+
+    def __cinit__(self):
+        self.dealloc = False
+        self._enet_host = NULL
 
     def __dealloc__(self):
-        if self._enet_host:
+        if self.dealloc:
             enet_host_destroy(self._enet_host)
 
     def connect(self, Address address, channelCount, data=0):
@@ -809,6 +856,23 @@ cdef class Host:
                 raise IOError("Connection failure!")
 
             return peer
+
+    def check_events(self):
+        """
+        Checks for any queued events on the host and dispatches one if available
+        """
+
+        if self._enet_host:
+            event = Event()
+            result = enet_host_check_events(
+                self._enet_host, &(<Event> event)._enet_event)
+
+            if result < 0:
+                raise IOError("Servicing error - probably disconnected.")
+            elif result == 0:
+                return None
+            else:
+                return event
 
     def service(self, timeout):
         """
@@ -850,6 +914,20 @@ cdef class Host:
                 packet.sent = True
                 enet_host_broadcast(self._enet_host, channelID, packet._enet_packet)
 
+    def compress_with_range_coder(self):
+        """
+        Sets the packet compressor the host should use to the default range coder
+        """
+
+        if self._enet_host:
+            return enet_host_compress_with_range_coder(self._enet_host);
+
+    property socket:
+        def __get__(self):
+            socket = Socket()
+            (<Socket> socket)._enet_socket = self._enet_host.socket
+            return socket
+
     property address:
         def __get__(self):
             if self._enet_host:
@@ -859,27 +937,68 @@ cdef class Host:
 
     property incomingBandwidth:
         def __get__(self):
-            return self._enet_incomingBandwidth
+            return self._enet_host.incomingBandwidth
 
         def __set__(self, value):
-            self._enet_incomingBandwidth = value
             enet_host_bandwidth_limit(self._enet_host,
-                self._enet_incomingBandwidth, self._enet_outgoingBandwidth)
+                value, self.outgoingBandwidth)
 
     property outgoingBandwidth:
         def __get__(self):
-            return self._enet_outgoingBandwidth
+            return self._enet_host.outgoingBandwidth
 
         def __set__(self, value):
-            self._enet_outgoingBandwidth = value
             enet_host_bandwidth_limit(self._enet_host,
-                self._enet_incomingBandwidth, self._enet_outgoingBandwidth)
+                self.incomingBandwidth, value)
 
-    property socket:
+    property peers:
         def __get__(self):
-            socket = Socket()
-            (<Socket> socket)._enet_socket = self._enet_host.socket
-            return socket
+            cdef size_t i
+            peers = []
+            for i from 0 <= i < self.peerCount:
+                peer = Peer()
+                (<Peer> peer)._enet_peer = &self._enet_host.peers[i]
+                peers.append(peer)
+            return peers
+
+    property peerCount:
+        def __get__(self):
+            return self._enet_host.peerCount
+
+    property channelLimit:
+        def __get__(self):
+            return self._enet_host.channelLimit
+
+        def __set__(self, value):
+            enet_host_channel_limit(self._enet_host, value)
+
+    property totalSentData:
+        def __get__(self):
+            return self._enet_host.totalSentData
+
+        def __set__(self, value):
+            self._enet_host.totalSentData = value
+
+    property totalSentPackets:
+        def __get__(self):
+            return self._enet_host.totalSentPackets
+
+        def __set__(self, value):
+            self._enet_host.totalSentPackets = value
+
+    property totalReceivedData:
+        def __get__(self):
+            return self._enet_host.totalReceivedData
+
+        def __set__(self, value):
+            self._enet_host.totalReceivedData = value
+
+    property totalReceivedPackets:
+        def __get__(self):
+            return self._enet_host.totalReceivedPackets
+
+        def __set__(self, value):
+            self._enet_host.totalReceivedPackets = value
 
 def _enet_atexit():
     enet_deinitialize()
