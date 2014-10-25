@@ -1,6 +1,6 @@
 #pyenet
 
-##About
+##Overview
 
 pyenet is a python wrapper for the ENet library by Lee Salzman,
  http://enet.bespin.org
