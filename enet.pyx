@@ -2,6 +2,8 @@ import atexit
 
 from cpython cimport bool
 
+from libc.stddef cimport ptrdiff_t
+
 cdef extern from "enet/types.h":
     ctypedef unsigned char enet_uint8
     ctypedef unsigned short enet_uint16
@@ -21,6 +23,14 @@ cdef extern from "enet/enet.h":
         ENET_PORT_ANY = 0
 
     ctypedef int ENetSocket
+
+    ctypedef struct ENetBuffer:
+        void * data
+        size_t dataLength
+
+    ctypedef struct ENetEvent
+
+    ctypedef int (__cdecl *ENetInterceptCallback) (ENetHost *host, ENetEvent *event) # __cdecl is standard on unix and overwriten for win32
 
     ctypedef struct ENetAddress:
         enet_uint32 host
@@ -107,10 +117,14 @@ cdef extern from "enet/enet.h":
         ENetPeer *peers
         size_t peerCount
         size_t channelLimit
+        enet_uint8 *receivedData
+        size_t receivedDataLength
+        ENetAddress receivedAddress
         enet_uint32 totalSentData
         enet_uint32 totalSentPackets
         enet_uint32 totalReceivedData
         enet_uint32 totalReceivedPackets
+        ENetInterceptCallback intercept
 
     ctypedef enum ENetEventType:
         ENET_EVENT_TYPE_NONE = 0
@@ -161,6 +175,10 @@ cdef extern from "enet/enet.h":
     void enet_peer_disconnect_now(ENetPeer *peer, enet_uint32 data)
     void enet_peer_disconnect_later(ENetPeer *peer, enet_uint32 data)
 
+    # Socket functions
+    int enet_socket_send(ENetSocket socket, ENetAddress * address,
+        ENetBuffer * buffer, size_t size)
+
 cdef enum:
     MAXHOSTNAME = 257
 
@@ -185,6 +203,8 @@ PEER_STATE_DISCONNECTING = ENET_PEER_STATE_DISCONNECTING
 PEER_STATE_ACKNOWLEDGING_DISCONNECT = ENET_PEER_STATE_ACKNOWLEDGING_DISCONNECT
 PEER_STATE_ZOMBIE = ENET_PEER_STATE_ZOMBIE
 
+cdef class Address
+
 cdef class Socket:
     """
     Socket (int socket)
@@ -197,6 +217,13 @@ cdef class Socket:
     """
 
     cdef ENetSocket _enet_socket
+
+    def send(self, Address address, data):
+        cdef ENetBuffer buffer
+        buffer.data = <void*>(<char*>data)
+        buffer.dataLength = len(data)
+        cdef int result = enet_socket_send(self._enet_socket,
+            &address._enet_address, &buffer, 1)
 
     def fileno(self):
         return self._enet_socket
@@ -396,6 +423,9 @@ cdef class Peer:
             elif op == 3:
                 return self.address != obj.address
         raise NotImplementedError
+
+    def __hash__(self):
+        return <ptrdiff_t>self._enet_peer
 
     def send(self, channelID, Packet packet):
         """
@@ -798,6 +828,10 @@ cdef class Event:
                 (<Packet> self._packet)._enet_packet = self._enet_event.packet
             return self._packet
 
+cdef class Host
+
+cdef Host current_host = None
+
 cdef class Host:
     """
     Host (Address address, int peerCount, int channelLimit,
@@ -819,6 +853,7 @@ cdef class Host:
 
     cdef ENetHost *_enet_host
     cdef bool dealloc
+    cdef object _interceptCallback
 
     def __init__ (self, Address address=None, peerCount=0, channelLimit=0,
         incomingBandwidth=0, outgoingBandwidth=0):
@@ -882,6 +917,9 @@ cdef class Host:
         the host and its peers. The timeout is in milliseconds.
         """
 
+        global current_host
+        current_host = self
+        cdef int result
         if self._enet_host:
             event = Event()
             result = enet_host_service(
@@ -889,6 +927,8 @@ cdef class Host:
 
             if result < 0:
                 raise IOError("Servicing error - probably disconnected.")
+            elif result == 0:
+                return None
             else:
                 return event
 
@@ -999,6 +1039,24 @@ cdef class Host:
 
         def __set__(self, value):
             self._enet_host.totalReceivedPackets = value
+
+    property intercept:
+        def __get__(self):
+            return self._interceptCallback
+
+        def __set__(self, value):
+            if value is None:
+                self._enet_host.intercept = NULL
+            else:
+                self._enet_host.intercept = intercept_callback
+            self._interceptCallback = value
+
+
+cdef int __cdecl intercept_callback(ENetHost *host, ENetEvent *event):
+    cdef Address address = Address(None, 0)
+    address._enet_address = host.receivedAddress
+    cdef object ret = current_host._interceptCallback(address, (<char*>host.receivedData)[:host.receivedDataLength])
+    return int(bool(ret))
 
 def _enet_atexit():
     enet_deinitialize()
