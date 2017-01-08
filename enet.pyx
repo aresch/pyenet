@@ -924,7 +924,6 @@ cdef class Host:
         the host and its peers. The timeout is in milliseconds.
         """
 
-        # cdef int result
         if self._enet_host:
             event = Event()
             result = enet_host_service(
@@ -932,8 +931,6 @@ cdef class Host:
 
             if result < 0:
                 raise IOError("Servicing error - probably disconnected.")
-            # elif result == 0:
-            #     return None
             else:
                 return event
 
