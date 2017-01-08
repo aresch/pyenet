@@ -828,9 +828,8 @@ cdef class Event:
                 (<Packet> self._packet)._enet_packet = self._enet_event.packet
             return self._packet
 
+cdef dict Host_static_instances = dict()
 cdef class Host
-
-cdef Host current_host = None
 
 cdef class Host:
     """
@@ -855,6 +854,21 @@ cdef class Host:
     cdef bool dealloc
     cdef object _interceptCallback
 
+    # property static_instances:
+    #     def __get__(self):
+    #         return Host_static_instances
+
+    #     def __set__(self, x):
+    #         global Host_static_instances
+    #         Host_static_instances = x 
+
+    #     # def __getitem__(self, key):
+    #     #     Host_static_instances[key] = x 
+
+    #     # def __setitem__(self, key,value):
+    #     #     global Host_static_instances
+    #     #     Host_static_instances[key] = value 
+
     def __init__ (self, Address address=None, peerCount=0, channelLimit=0,
         incomingBandwidth=0, outgoingBandwidth=0):
 
@@ -865,15 +879,43 @@ cdef class Host:
 
         if not self._enet_host:
             raise MemoryError("Unable to create host structure!")
+
         self.dealloc = True
+
+        global Host_static_instances
+        enet_host_key = format(<ptrdiff_t>self._enet_host, '02x') 
+        print "creating %s in __init__" % enet_host_key
+        Host_static_instances[enet_host_key] = self
+        print Host_static_instances
+
+    # def __hash__(self):
+    #     return <ptrdiff_t>self._enet_host
 
     def __cinit__(self):
         self.dealloc = False
         self._enet_host = NULL
 
     def __dealloc__(self):
+        global Host_static_instances
+        enet_host_key = format(<ptrdiff_t>self._enet_host, '02x') 
+
+        for enet_host_key, pyenet_host in Host_static_instances.iteritems():
+            if pyenet_host is self:
+                print "deleting %s in __dealloc__" % enet_host_key
+                del Host_static_instances[enet_host_key]
+
         if self.dealloc:
             enet_host_destroy(self._enet_host)
+
+    def __del__(self):
+        global Host_static_instances
+        enet_host_key = format(<ptrdiff_t>self._enet_host, '02x') 
+        print "deleting %s in __del__" % enet_host_key
+
+        del Host_static_instances[enet_host_key]
+        print Host_static_instances
+
+
 
     def connect(self, Address address, channelCount, data=0):
         """
@@ -917,9 +959,7 @@ cdef class Host:
         the host and its peers. The timeout is in milliseconds.
         """
 
-        global current_host
-        current_host = self
-        cdef int result
+        # cdef int result
         if self._enet_host:
             event = Event()
             result = enet_host_service(
@@ -927,8 +967,8 @@ cdef class Host:
 
             if result < 0:
                 raise IOError("Servicing error - probably disconnected.")
-            elif result == 0:
-                return None
+            # elif result == 0:
+            #     return None
             else:
                 return event
 
@@ -1055,7 +1095,7 @@ cdef class Host:
 cdef int __cdecl intercept_callback(ENetHost *host, ENetEvent *event):
     cdef Address address = Address(None, 0)
     address._enet_address = host.receivedAddress
-    cdef object ret = current_host._interceptCallback(address, (<char*>host.receivedData)[:host.receivedDataLength])
+    cdef object ret = Host.instances[<ptrdiff_t>event.peer.host]._interceptCallback(address, (<char*>host.receivedData)[:host.receivedDataLength])
     return int(bool(ret))
 
 def _enet_atexit():
