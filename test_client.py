@@ -20,12 +20,20 @@ while run:
     elif event.type == enet.EVENT_TYPE_RECEIVE:
         print("%s: IN:  %r" % (event.peer.address, event.packet.data))
         continue
+
     msg = os.urandom(40)
     packet = enet.Packet(msg)
     peer.send(0, packet)
 
     counter += 1
     if counter >= MSG_NUMBER:
+        packet = enet.Packet("SEND QUERY")
+        peer.send(0, packet)
+        event = host.service(1000)
+        assert(event.type == enet.EVENT_TYPE_RECEIVE)
+        assert(event.packet.data == "RETURN DATA")
+
+
         msg = SHUTDOWN_MSG
         peer.send(0, enet.Packet(msg))
         host.service(0)
