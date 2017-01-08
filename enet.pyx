@@ -830,7 +830,6 @@ cdef class Event:
 
 from weakref import WeakValueDictionary
 cdef Host_static_instances = WeakValueDictionary()
-cdef class Host
 
 cdef class Host:
     """
@@ -1061,7 +1060,9 @@ cdef class Host:
 cdef int __cdecl intercept_callback(ENetHost *host, ENetEvent *event):
     cdef Address address = Address(None, 0)
     address._enet_address = host.receivedAddress
-    cdef object ret = Host.instances[<uintptr_t>event.peer.host]._interceptCallback(address, (<char*>host.receivedData)[:host.receivedDataLength])
+    cdef object ret = None
+    if <uintptr_t>event.peer.host in Host_static_instances:
+        ret = Host_static_instances[<uintptr_t>event.peer.host]._interceptCallback(address, (<char*>host.receivedData)[:host.receivedDataLength])
     return int(bool(ret))
 
 def _enet_atexit():
