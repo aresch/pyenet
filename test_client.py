@@ -27,6 +27,9 @@ while run:
 
     counter += 1
     if counter >= MSG_NUMBER:
+        event = host.service(1000)
+        assert(event.type == enet.EVENT_TYPE_RECEIVE)
+        
         packet = enet.Packet("SEND QUERY")
         peer.send(0, packet)
         event = host.service(1000)

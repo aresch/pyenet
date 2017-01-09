@@ -6,7 +6,7 @@ SHUTDOWN_MSG = "SHUTDOWN"
 
 host = enet.Host(enet.Address(b"localhost", 54301), 10, 0, 0, 0)
 def receive_callback(address, data):
-    print address, data
+    print address, "%r"%data
     if data and data == "SEND QUERY":
         global host
         host.socket.send(address, "RETURN DATA")

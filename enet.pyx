@@ -1060,19 +1060,19 @@ cdef class Host:
 cdef int __cdecl intercept_callback(ENetHost *host, ENetEvent *event):
     cdef Address address = Address(None, 0)
     address._enet_address = host.receivedAddress
-    print "entered intercept callback"
-    print "intercept callback addr is ", address
-    print "peer is  ", <uintptr_t>event.peer
+    # print "entered intercept callback"
+    # print "intercept callback addr is ", address
+    # print "peer is  ", <uintptr_t>event.peer
     # if event.peer == NULL:
     #     return 0
     cdef object ret = None
 
-    print "peer host is  ", host.address
-    print "Host_static_instances is  ", Host_static_instances
+    # print "peer host is  ", host.address
+    # print "Host_static_instances is  ", Host_static_instances
 
     if <uintptr_t>host in Host_static_instances:
-        print "hoststatinst addr is",Host_static_instances[<uintptr_t>host].address
-        print "hoststatinst  is",Host_static_instances[<uintptr_t>host]
+        # print "hoststatinst addr is",Host_static_instances[<uintptr_t>host].address
+        # print "hoststatinst  is",Host_static_instances[<uintptr_t>host]
         ret = Host_static_instances[<uintptr_t>host].intercept(address, (<char*>host.receivedData)[:host.receivedDataLength])
     return int(bool(ret))
 
