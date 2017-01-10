@@ -30,7 +30,7 @@ cdef extern from "enet/enet.h":
 
     ctypedef struct ENetEvent
 
-    ctypedef int (__cdecl *ENetInterceptCallback) (ENetHost *host, ENetEvent *event) # __cdecl is standard on unix and overwriten for win32
+    ctypedef int (__cdecl *ENetInterceptCallback) (ENetHost *host, ENetEvent *event) except -1 # __cdecl is standard on unix and overwriten for win32
 
     ctypedef struct ENetAddress:
         enet_uint32 host
@@ -1057,7 +1057,7 @@ cdef class Host:
             self._interceptCallback = value
 
 
-cdef int __cdecl intercept_callback(ENetHost *host, ENetEvent *event):
+cdef int __cdecl intercept_callback(ENetHost *host, ENetEvent *event) except -1:
     cdef Address address = Address(None, 0)
     address._enet_address = host.receivedAddress
     # print "entered intercept callback"

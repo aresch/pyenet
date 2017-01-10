@@ -6,6 +6,21 @@ MSG_NUMBER = 10
 
 host = enet.Host(None, 1, 0, 0, 0)
 peer = host.connect(enet.Address(b"localhost", 54301), 1)
+def receive_callback(address, data):
+    global host
+
+    if data != "\xff\xff\xff\xffstatusResponse\n":
+        # error messages are not propagating
+        # through cython
+        print("data != statusResponse")
+        assert(False)
+
+    msg = SHUTDOWN_MSG
+    peer.send(0, enet.Packet(msg))
+    host.service(0)
+    peer.disconnect()
+
+    host.intercept = None
 
 counter = 0
 run = True
@@ -30,16 +45,7 @@ while run:
         event = host.service(1000)
         assert(event.type == enet.EVENT_TYPE_RECEIVE)
         
-        packet = enet.Packet("SEND QUERY")
-        peer.send(0, packet)
-        event = host.service(1000)
-        assert(event.type == enet.EVENT_TYPE_RECEIVE)
-        assert(event.packet.data == "RETURN DATA")
-
-
-        msg = SHUTDOWN_MSG
-        peer.send(0, enet.Packet(msg))
-        host.service(0)
-        peer.disconnect()
+        host.intercept = receive_callback
+        packet = host.socket.send(peer.address,"\xff\xff\xff\xffgetstatus\x00")
 
     print("%s: OUT: %r" % (peer.address, msg))

@@ -1,37 +1,17 @@
 import enet
-print enet
 SHUTDOWN_MSG = "SHUTDOWN"
-    # else:
-        # protocol.receive_callback(self, address, data)
 
 host = enet.Host(enet.Address(b"localhost", 54301), 10, 0, 0, 0)
 def receive_callback(address, data):
-    print address, "%r"%data
-    if data and data == "SEND QUERY":
-        global host
-        host.socket.send(address, "RETURN DATA")
+    global host
+    if data and data == "\xff\xff\xff\xffgetstatus\x00":
+        host.socket.send(address, "\xff\xff\xff\xffstatusResponse\n")
 
 host.intercept = receive_callback
 
 connect_count = 0
 run = True
 shutdown_recv = False
-
-# def handleQuery(self, challenge):
-#     options = {'gamename' : 'Ace of Spades', 'fs_game' : 'pysnip'}
-#     chall = makeValid(challenge)
-#     if len(chall) > 0:
-#         options['challenge'] = chall
-#     options['sv_hostname'] = makeValid(self.name)
-#     options['version'] = makeValid(self.server_version)
-#     options['mapname'] = makeValid(self.map_info.name)
-#     options['gametype'] = makeValid(self.get_mode_name())
-#     options['sv_maxclients'] = self.max_players
-#     players = []
-#     for p in self.players.values():
-#         players.append({ 'score' : p.kills, 'ping' : p.latency, 'name' : makeValid(p.name), 'team' : getTeamId(p.team.id) })
-#     options['clients'] = len(players)
-#     return (options, players);
 
 while run:
     # Wait 1 second for an event
