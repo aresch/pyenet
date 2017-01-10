@@ -42,10 +42,7 @@ while run:
 
     counter += 1
     if counter >= MSG_NUMBER:
-        event = host.service(1000)
-        assert(event.type == enet.EVENT_TYPE_RECEIVE)
-        
         host.intercept = receive_callback
-        packet = host.socket.send(peer.address,"\xff\xff\xff\xffgetstatus\x00")
+        host.socket.send(peer.address,"\xff\xff\xff\xffgetstatus\x00")
 
     print("%s: OUT: %r" % (peer.address, msg))
