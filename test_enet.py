@@ -71,6 +71,24 @@ class TestHost(unittest.TestCase):
         self.assertEquals(client_connected, True)
         self.assertEquals(server_connected, True)
 
+    def test_socketsend(self):
+
+        self.send_done = False
+        socketsend_msg = "\xff\xff\xff\xffgetstatus\x00"
+
+        def f(address, data):
+            if data == socketsend_msg:
+                self.send_done = True
+
+        self.server.intercept = f
+
+        while not self.send_done:
+
+            self.client.service(0)
+            self.client.socket.send(self.server.address, socketsend_msg)
+
+            self.server.service(9)
+
     def test_broadcast(self):
         broadcast_done = False
         broadcast_msg = b"foo\0bar\n baz!"
