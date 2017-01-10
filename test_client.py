@@ -42,6 +42,9 @@ while run:
 
     counter += 1
     if counter >= MSG_NUMBER:
+        event = host.service(1000)
+        assert(event.type == enet.EVENT_TYPE_RECEIVE)
+
         host.intercept = receive_callback
         host.socket.send(peer.address,"\xff\xff\xff\xffgetstatus\x00")
 
