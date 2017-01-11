@@ -29,6 +29,8 @@ while run:
         if event.packet.data == "SHUTDOWN":
             shutdown_recv = True
 
+# Part of the test to do with intercept callback and socket.send
+
 connect_count = 0
 run = True
 shutdown_recv = False

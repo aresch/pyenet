@@ -35,6 +35,7 @@ while run:
     print("%s: OUT: %r" % (peer.address, msg))
 
 
+# Part of the test to do with intercept callback and socket.send
 peer = host.connect(enet.Address(b"localhost", 54301), 1)
 
 def receive_callback(address, data):
