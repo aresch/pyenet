@@ -43,7 +43,6 @@ def receive_callback(address, data):
         # error messages are not propagating
         # through cython
         print("data != statusResponse")
-        print data
         assert(False)
     msg = SHUTDOWN_MSG
     peer.send(0, enet.Packet(msg))
