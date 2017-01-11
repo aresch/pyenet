@@ -7,7 +7,6 @@ MSG_NUMBER = 10
 host = enet.Host(None, 1, 0, 0, 0)
 peer = host.connect(enet.Address(b"localhost", 54301), 1)
 def receive_callback(address, data):
-    global host
 
     if data != "\xff\xff\xff\xffstatusResponse\n":
         # error messages are not propagating
