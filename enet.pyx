@@ -25,7 +25,7 @@ cdef extern from "enet/enet.h":
     ctypedef int ENetSocket
 
     ctypedef struct ENetBuffer:
-        void * data
+        void *data
         size_t dataLength
 
     ctypedef struct ENetEvent
@@ -176,8 +176,7 @@ cdef extern from "enet/enet.h":
     void enet_peer_disconnect_later(ENetPeer *peer, enet_uint32 data)
 
     # Socket functions
-    int enet_socket_send(ENetSocket socket, ENetAddress * address,
-        ENetBuffer * buffer, size_t size)
+    int enet_socket_send(ENetSocket socket, ENetAddress *address, ENetBuffer *buffer, size_t size)
 
 cdef enum:
     MAXHOSTNAME = 257
@@ -224,6 +223,7 @@ cdef class Socket:
         buffer.dataLength = len(data)
         cdef int result = enet_socket_send(self._enet_socket,
             &address._enet_address, &buffer, 1)
+        return result
 
     def fileno(self):
         return self._enet_socket
