@@ -39,7 +39,7 @@ while run:
 peer = host.connect(enet.Address(b"localhost", 54301), 1)
 
 def receive_callback(address, data):
-    if data != "\xff\xff\xff\xffstatusResponse\n":
+    if data != b"\xff\xff\xff\xffstatusResponse\n":
         # error messages are not propagating
         # through cython
         print("data != statusResponse")
@@ -64,4 +64,4 @@ while run:
         print("%s: IN:  %r" % (event.peer.address, event.packet.data))
         continue
 
-    host.socket.send(peer.address,"\xff\xff\xff\xffgetstatus\x00")
+    host.socket.send(peer.address, b"\xff\xff\xff\xffgetstatus\x00")

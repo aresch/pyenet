@@ -37,9 +37,8 @@ shutdown_recv = False
 
 def receive_callback(address, data):
     global host
-    if data and data == "\xff\xff\xff\xffgetstatus\x00":
-        print "sending data"
-        host.socket.send(address, "\xff\xff\xff\xffstatusResponse\n")
+    if data and data == b"\xff\xff\xff\xffgetstatus\x00":
+        host.socket.send(address, b"\xff\xff\xff\xffstatusResponse\n")
 
 host.intercept = receive_callback
 
