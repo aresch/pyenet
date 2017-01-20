@@ -201,6 +201,7 @@ PEER_STATE_DISCONNECT_LATER = ENET_PEER_STATE_DISCONNECT_LATER
 PEER_STATE_DISCONNECTING = ENET_PEER_STATE_DISCONNECTING
 PEER_STATE_ACKNOWLEDGING_DISCONNECT = ENET_PEER_STATE_ACKNOWLEDGING_DISCONNECT
 PEER_STATE_ZOMBIE = ENET_PEER_STATE_ZOMBIE
+from libc.stdio cimport printf
 
 cdef class Address
 
@@ -220,9 +221,25 @@ cdef class Socket:
     def send(self, Address address, data):
         cdef ENetBuffer buffer
         data = data if isinstance(data, bytes) else data.encode('cp437')
+        # data = bytearray(data)
 
-        buffer.data = <void*>(<char*>data)
+        # ba = bytearray()
+        # ba.extend(data)
+        # cdef char* other_c_string = <char*>(ba[:])
+
+        # cdef bytes py_bytes = data#.encode()
+        cdef char* c_string = data
+        # print "c string here::::"
+        # printf(c_string)
+
+        # print "sending %r" % ba
+
+        buffer.data = <void*>(c_string)
         buffer.dataLength = len(data)
+
+        print "--hmm"
+        print (<char*>buffer.data)[:buffer.dataLength]
+
         cdef int result = enet_socket_send(self._enet_socket,
             &address._enet_address, &buffer, 1)
         return result
@@ -1060,6 +1077,11 @@ cdef int __cdecl intercept_callback(ENetHost *host, ENetEvent *event) except -1:
     cdef Address address = Address(None, 0)
     address._enet_address = host.receivedAddress
     cdef object ret = None
+
+    print Host_static_instances.data
+    print <uintptr_t>host
+    # print host.receivedData
+    print "data len: "+ str(host.receivedDataLength)
 
     if <uintptr_t>host in Host_static_instances:
         ret = Host_static_instances[<uintptr_t>host].intercept(address, (<char*>host.receivedData)[:host.receivedDataLength])

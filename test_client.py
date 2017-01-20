@@ -10,7 +10,7 @@ peer = host.connect(enet.Address(b"localhost", 54301), 1)
 counter = 0
 run = True
 while run:
-    event = host.service(1000)
+    event = host.service(100)
     if event.type == enet.EVENT_TYPE_CONNECT:
         print("%s: CONNECT" % event.peer.address)
     elif event.type == enet.EVENT_TYPE_DISCONNECT:
@@ -39,22 +39,30 @@ while run:
 peer = host.connect(enet.Address(b"localhost", 54301), 1)
 
 def receive_callback(address, data):
+    print("RCB CL: %r" % data)
+    print("the compr: " + str(data != b"\xff\xff\xff\xffstatusResponse\n"))
+
     if data != b"\xff\xff\xff\xffstatusResponse\n":
         # error messages are not propagating
         # through cython
+        print("**WARNING**")
         print("data != statusResponse")
-        assert(False)
-    msg = SHUTDOWN_MSG
-    peer.send(0, enet.Packet(msg))
-    host.service(0)
-    peer.disconnect()
-    host.intercept = None
+        # assert(False)
+    # msg = SHUTDOWN_MSG
+    # peer.send(0, enet.Packet(msg))
+    # host.service(0)
+    # peer.disconnect()
+    # host.intercept = None
 
 run = True
 while run:
     event = host.service(1000)
     if event.type == enet.EVENT_TYPE_CONNECT:
         print("%s: CONNECT" % event.peer.address)
+        msg = os.urandom(40)
+        packet = enet.Packet(msg)
+        peer.send(0, packet)
+
         host.intercept = receive_callback
     elif event.type == enet.EVENT_TYPE_DISCONNECT:
         print("%s: DISCONNECT" % event.peer.address)
