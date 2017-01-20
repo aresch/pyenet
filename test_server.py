@@ -36,9 +36,6 @@ run = True
 shutdown_recv = False
 
 def receive_callback(address, data):
-    # print("RCB SR: %r" % data)
-
-    global host
     if data and data == b"\xff\xff\xff\xffgetstatus\x00":
         host.socket.send(address, b"\xff\xff\xff\xffstatusResponse\n")
 
@@ -57,6 +54,8 @@ while run:
             run = False
     elif event.type == enet.EVENT_TYPE_RECEIVE:
         print("%s: IN:  %r" % (event.peer.address, event.packet.data))
+
+        # This packet echo is used to mimick the usual use case when packets are going back&forth while the intercept callback is used
         msg = event.packet.data
         if event.peer.send(0, enet.Packet(msg)) < 0:
             print("%s: Error sending echo packet!" % event.peer.address)
