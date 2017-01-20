@@ -20,7 +20,6 @@ while run:
     elif event.type == enet.EVENT_TYPE_RECEIVE:
         print("%s: IN:  %r" % (event.peer.address, event.packet.data))
         continue
-
     msg = os.urandom(40)
     packet = enet.Packet(msg)
     peer.send(0, packet)

@@ -1,13 +1,12 @@
 import enet
+
 SHUTDOWN_MSG = "SHUTDOWN"
 
 host = enet.Host(enet.Address(b"localhost", 54301), 10, 0, 0, 0)
 
-
 connect_count = 0
 run = True
 shutdown_recv = False
-
 while run:
     # Wait 1 second for an event
     event = host.service(1000)

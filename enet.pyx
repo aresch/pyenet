@@ -1,7 +1,6 @@
 import atexit
 
 from cpython cimport bool
-
 from libc.stdint cimport uintptr_t
 
 cdef extern from "enet/types.h":
@@ -221,7 +220,7 @@ cdef class Socket:
         cdef ENetBuffer buffer
         data = data if isinstance(data, bytes) else data.encode('cp437')
 
-        buffer.data = <void*>(<char*>data)
+        buffer.data = <char*>data
         buffer.dataLength = len(data)
 
         cdef int result = enet_socket_send(self._enet_socket,
@@ -832,7 +831,7 @@ cdef class Event:
             return self._packet
 
 from weakref import WeakValueDictionary
-cdef Host_static_instances = WeakValueDictionary()
+cdef host_static_instances = WeakValueDictionary()
 
 cdef class Host:
     """
@@ -868,11 +867,10 @@ cdef class Host:
 
         if not self._enet_host:
             raise MemoryError("Unable to create host structure!")
-
         self.dealloc = True
 
-        global Host_static_instances
-        Host_static_instances[<uintptr_t>self._enet_host] = self
+        global host_static_instances
+        host_static_instances[<uintptr_t>self._enet_host] = self
 
     def __hash__(self):
         return <uintptr_t>self._enet_host
@@ -1062,8 +1060,8 @@ cdef int __cdecl intercept_callback(ENetHost *host, ENetEvent *event) except -1:
     address._enet_address = host.receivedAddress
     cdef object ret = None
 
-    if <uintptr_t>host in Host_static_instances:
-        ret = Host_static_instances[<uintptr_t>host].intercept(address, (<char*>host.receivedData)[:host.receivedDataLength])
+    if <uintptr_t>host in host_static_instances:
+        ret = host_static_instances[<uintptr_t>host].intercept(address, (<char*>host.receivedData)[:host.receivedDataLength])
     return int(bool(ret))
 
 def _enet_atexit():
