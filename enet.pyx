@@ -237,8 +237,8 @@ cdef class Socket:
         buffer.data = <void*>(c_string)
         buffer.dataLength = len(data)
 
-        print "--hmm"
-        print (<char*>buffer.data)[:buffer.dataLength]
+        # print "--hmm"
+        # print (<char*>buffer.data)[:buffer.dataLength]
 
         cdef int result = enet_socket_send(self._enet_socket,
             &address._enet_address, &buffer, 1)
@@ -1078,10 +1078,10 @@ cdef int __cdecl intercept_callback(ENetHost *host, ENetEvent *event) except -1:
     address._enet_address = host.receivedAddress
     cdef object ret = None
 
-    print Host_static_instances.data
-    print <uintptr_t>host
-    # print host.receivedData
-    print "data len: "+ str(host.receivedDataLength)
+    # print Host_static_instances.data
+    # print <uintptr_t>host
+    # # print host.receivedData
+    # print "data len: "+ str(host.receivedDataLength)
 
     if <uintptr_t>host in Host_static_instances:
         ret = Host_static_instances[<uintptr_t>host].intercept(address, (<char*>host.receivedData)[:host.receivedDataLength])

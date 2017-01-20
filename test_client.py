@@ -39,20 +39,22 @@ while run:
 peer = host.connect(enet.Address(b"localhost", 54301), 1)
 
 def receive_callback(address, data):
-    print("RCB CL: %r" % data)
-    print("the compr: " + str(data != b"\xff\xff\xff\xffstatusResponse\n"))
+    # print("RCB CL: %r" % data)
+    # print("the compr: " + str(data != b"\xff\xff\xff\xffstatusResponse\n"))
 
     if data != b"\xff\xff\xff\xffstatusResponse\n":
         # error messages are not propagating
         # through cython
-        print("**WARNING**")
+        # print("**WARNING**")
         print("data != statusResponse")
-        # assert(False)
-    # msg = SHUTDOWN_MSG
-    # peer.send(0, enet.Packet(msg))
-    # host.service(0)
-    # peer.disconnect()
-    # host.intercept = None
+        assert(False)
+
+    # if the test gets to this point, it means it has passed. Disconnect is a clean up
+    msg = SHUTDOWN_MSG
+    peer.send(0, enet.Packet(msg))
+    host.service(0)
+    peer.disconnect()
+    host.intercept = None
 
 run = True
 while run:

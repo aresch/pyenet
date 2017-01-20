@@ -26,7 +26,7 @@ while run:
             print("%s: Error sending echo packet!" % event.peer.address)
         else:
             print("%s: OUT: %r" % (event.peer.address, msg))
-        if event.packet.data == "SHUTDOWN":
+        if event.packet.data == b"SHUTDOWN":
             shutdown_recv = True
 
 # Part of the test to do with intercept callback and socket.send
@@ -36,7 +36,7 @@ run = True
 shutdown_recv = False
 
 def receive_callback(address, data):
-    print("RCB SR: %r" % data)
+    # print("RCB SR: %r" % data)
 
     global host
     if data and data == b"\xff\xff\xff\xffgetstatus\x00":
@@ -62,5 +62,5 @@ while run:
             print("%s: Error sending echo packet!" % event.peer.address)
         else:
             print("%s: OUT: %r" % (event.peer.address, msg))
-        if event.packet.data == "SHUTDOWN":
+        if event.packet.data == b"SHUTDOWN":
             shutdown_recv = True
