@@ -219,6 +219,8 @@ cdef class Socket:
 
     def send(self, Address address, data):
         cdef ENetBuffer buffer
+        data = data if isinstance(data, bytes) else data.encode('cp437')
+
         buffer.data = <void*>(<char*>data)
         buffer.dataLength = len(data)
         cdef int result = enet_socket_send(self._enet_socket,

@@ -74,7 +74,7 @@ class TestHost(unittest.TestCase):
     def test_socketsend(self):
 
         self.send_done = False
-        socketsend_msg = "\xff\xff\xff\xffgetstatus\x00"
+        socketsend_msg = b"\xff\xff\xff\xffgetstatus\x00"
 
         def f(address, data):
             if data != socketsend_msg:
