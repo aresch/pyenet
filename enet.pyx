@@ -252,7 +252,7 @@ cdef class Address:
     def __init__(self, host, port):
         if host is not None:
             # Convert the hostname to a byte string if needed
-            self.host = host if isinstance(host, bytes) else bytes(host, "ascii")
+            self.host = host if isinstance(host, bytes) else host.encode('cp437')
         else:
             self.host = None
         self.port = port
