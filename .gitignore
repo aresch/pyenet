@@ -93,3 +93,4 @@ ENV/
 # Pyenet specific files
 enet.c
 enet/
+config.pxi

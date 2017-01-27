@@ -2,6 +2,7 @@ import atexit
 
 from cpython cimport bool
 from libc.stdint cimport uintptr_t
+include "config.pxi"
 
 cdef extern from "enet/types.h":
     ctypedef unsigned char enet_uint8
@@ -227,8 +228,10 @@ cdef class Socket:
             &address._enet_address, &buffer, 1)
         return result
 
-    def fileno(self):
-        return self._enet_socket
+    if HIDE_SOCKET_FILENO == 0:
+        def fileno(self):
+            return self._enet_socket
+
 
 cdef class Address:
     """
@@ -925,15 +928,31 @@ cdef class Host:
         the host and its peers. The timeout is in milliseconds.
         """
 
+        cdef int number_result
         if self._enet_host:
             event = Event()
-            result = enet_host_service(
-                self._enet_host, &(<Event> event)._enet_event, timeout)
+            global FAST_CONNECT_DROP
 
-            if result < 0:
-                raise IOError("Servicing error - probably disconnected.")
+            if FAST_CONNECT_DROP == 1:
+                number_result = enet_host_service(
+                    self._enet_host, &(<Event> event)._enet_event, timeout)
+
+                if number_result < 0:
+                    raise IOError("Servicing error - probably disconnected.")
+                elif number_result == 0:
+                    return None
+                else:
+                    return event
             else:
-                return event
+                result = enet_host_service(
+                    self._enet_host, &(<Event> event)._enet_event, timeout)
+
+                if result < 0:
+                    raise IOError("Servicing error - probably disconnected.")
+                else:
+                    return event
+
+
 
     def flush(self):
         """
