@@ -4,8 +4,26 @@ from Cython.Distutils import build_ext
 
 import glob
 import sys
+import os
 
-source_files = ["enet.pyx"]
+compile_options = {
+  'hide_socket_fileno': False,
+  'fast_connect_drop': False,
+}
+
+if "--enable-hide-socket-fileno" in sys.argv:
+    compile_options["hide_socket_fileno"] = True
+    sys.argv.remove("--enable-hide-socket-fileno")
+if "--enable-fast-connect-drop" in sys.argv:
+    compile_options["fast_connect_drop"] = True
+    sys.argv.remove("--enable-fast-connect-drop")
+
+with open(os.path.join(os.path.dirname(__file__), 'config.pxi'), 'w') as fd:
+    for k, v in compile_options.items():
+        fd.write('DEF %s = %d\n' % (k.upper(), int(v)))
+
+
+source_files = ["enet.pyx", "config.pxi"]
 
 _enet_files = glob.glob("enet/*.c")
 
