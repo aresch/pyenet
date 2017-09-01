@@ -435,7 +435,7 @@ cdef class Peer:
 
         Queues a packet to be sent.
 
-        returns 0 on sucess, < 0 on failure
+        returns 0 on success, < 0 on failure
         """
 
         if self.check_valid() and packet.is_valid():
