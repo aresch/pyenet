@@ -15,7 +15,7 @@ cdef extern from "enet/enet.h":
     # forward declaration
     ctypedef struct ENetPeer
     ctypedef struct ENetHost
-    
+
     cdef enum:
         ENET_HOST_ANY = 0
         ENET_HOST_BROADCAST = 0xFFFFFFFF
@@ -218,7 +218,7 @@ cdef class Socket:
 
     def send(self, Address address, data):
         cdef ENetBuffer buffer
-        data = data if isinstance(data, bytes) else data.encode('cp437')
+        data = data if isinstance(data, bytes) else data.encode()
 
         buffer.data = <char*>data
         buffer.dataLength = len(data)
@@ -917,12 +917,14 @@ cdef class Host:
             else:
                 return event
 
-    def service(self, timeout):
+    def service(self, timeout, fast_drop=False):
         """
         Event service (int timeout)
 
         Waits for events on the host specified and shuttles packets between
         the host and its peers. The timeout is in milliseconds.
+
+        if fast_drop is set, None can be returned instead
         """
 
         if self._enet_host:
@@ -932,6 +934,8 @@ cdef class Host:
 
             if result < 0:
                 raise IOError("Servicing error - probably disconnected.")
+            if result == 0 and fast_drop:
+                return None
             else:
                 return event
 
