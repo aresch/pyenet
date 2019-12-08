@@ -28,6 +28,7 @@ while run:
         continue
     msg = bytes(bytearray([random.randint(0,255) for i in range(40)]))
     packet = enet.Packet(msg)
+    packet.set_free_callback(lambda: print("%s: ACK %s" % (peer.address, counter)))
     peer.send(0, packet)
 
     counter += 1
