@@ -30,6 +30,7 @@ cdef extern from "enet/enet.h":
     ctypedef struct ENetEvent
 
     ctypedef int (__cdecl *ENetInterceptCallback) (ENetHost *host, ENetEvent *event) except -1 # __cdecl is standard on unix and overwriten for win32
+    ctypedef enet_uint32(__cdecl *ENetChecksumCallback) (ENetBuffer *buffers, size_t bufferCount)
 
     ctypedef struct ENetAddress:
         enet_uint32 host
@@ -67,6 +68,7 @@ cdef extern from "enet/enet.h":
         enet_uint8 outgoingSessionID
         enet_uint8 incomingSessionID
         ENetAddress address
+        ENetChecksumCallback checksum
         char *data
         ENetPeerState state
         size_t channelCount
@@ -124,6 +126,7 @@ cdef extern from "enet/enet.h":
         enet_uint32 totalReceivedData
         enet_uint32 totalReceivedPackets
         ENetInterceptCallback intercept
+        ENetChecksumCallback checksum
 
     ctypedef enum ENetEventType:
         ENET_EVENT_TYPE_NONE = 0
@@ -176,6 +179,7 @@ cdef extern from "enet/enet.h":
 
     # Socket functions
     int enet_socket_send(ENetSocket socket, ENetAddress *address, ENetBuffer *buffer, size_t size)
+    enet_uint32 enet_crc32(ENetBuffer *buffers, size_t bufferCount)
 
 cdef enum:
     MAXHOSTNAME = 257
