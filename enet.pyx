@@ -102,7 +102,7 @@ cdef extern from "enet/enet.h":
         enet_uint32 windowSize
         enet_uint32 reliableDataInTransit
         enet_uint16 outgoingReliableSequenceNumber
-        int needsDispatch
+        enet_uint16 flags
         enet_uint16 incomingUnsequencedGroup
         enet_uint16 outgoingUnsequencedGroup
         enet_uint32 unsequencedWindow
@@ -761,10 +761,10 @@ cdef class Peer:
             if self.check_valid():
                 return self._enet_peer.outgoingReliableSequenceNumber
 
-    property needsDispatch:
+    property flags:
         def __get__(self):
             if self.check_valid():
-                return self._enet_peer.needsDispatch
+                return self._enet_peer.flags
 
     property incomingUnsequencedGroup:
         def __get__(self):
