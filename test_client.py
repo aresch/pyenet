@@ -11,6 +11,7 @@ SHUTDOWN_MSG = b"SHUTDOWN"
 MSG_NUMBER = 10
 
 host = enet.Host(None, 1, 0, 0, 0)
+host.checksum = enet.ENET_CRC32
 peer = host.connect(enet.Address(b"localhost", 54301), 1)
 
 counter = 0
@@ -26,7 +27,7 @@ while run:
     elif event.type == enet.EVENT_TYPE_RECEIVE:
         print("%s: IN:  %r" % (event.peer.address, event.packet.data))
         continue
-    msg = bytes(bytearray([random.randint(0,255) for i in range(40)]))
+    msg = bytes(bytearray([random.randint(0, 255) for i in range(40)]))
     packet = enet.Packet(msg)
     peer.send(0, packet)
 
@@ -45,6 +46,7 @@ peer = host.connect(enet.Address(b"localhost", 54301), 1)
 shutdown_scheduled = False
 run = True
 
+
 def receive_callback(address, data):
     global shutdown_scheduled
 
@@ -58,13 +60,14 @@ def receive_callback(address, data):
         # error messages are not propagating
         # through cython
         print("data != statusResponse. Instead of expected, got %r" % data)
-        assert(False)
+        assert False
+
 
 while run:
     event = host.service(1000)
     if event.type == enet.EVENT_TYPE_CONNECT:
         print("%s: CONNECT" % event.peer.address)
-        msg = bytes(bytearray([random.randint(0,255) for i in range(40)]))
+        msg = bytes(bytearray([random.randint(0, 255) for i in range(40)]))
         packet = enet.Packet(msg)
         peer.send(0, packet)
 
