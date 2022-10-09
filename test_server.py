@@ -3,7 +3,7 @@ import enet
 SHUTDOWN_MSG = "SHUTDOWN"
 
 host = enet.Host(enet.Address(b"localhost", 54301), 10, 0, 0, 0)
-
+host.checksum = enet.ENET_CRC32
 connect_count = 0
 run = True
 shutdown_recv = False
@@ -34,9 +34,11 @@ connect_count = 0
 run = True
 shutdown_recv = False
 
+
 def receive_callback(address, data):
     if data and data == b"\xff\xff\xff\xffgetstatus\x00":
         host.socket.send(address, b"\xff\xff\xff\xffstatusResponse\n")
+
 
 host.intercept = receive_callback
 

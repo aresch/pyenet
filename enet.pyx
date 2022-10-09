@@ -10,7 +10,6 @@ cdef extern from "enet/types.h":
     ctypedef unsigned int size_t
 
 cdef extern from "enet/enet.h":
-
     ctypedef enet_uint32 ENetVersion
     # forward declaration
     ctypedef struct ENetPeer
@@ -29,6 +28,7 @@ cdef extern from "enet/enet.h":
 
     ctypedef struct ENetEvent
 
+    ctypedef enet_uint32 (__cdecl *ENetChecksumCallback) (const ENetBuffer * buffers, size_t bufferCount)
     ctypedef int (__cdecl *ENetInterceptCallback) (ENetHost *host, ENetEvent *event) except -1 # __cdecl is standard on unix and overwriten for win32
 
     ctypedef struct ENetAddress:
@@ -124,6 +124,7 @@ cdef extern from "enet/enet.h":
         enet_uint32 totalReceivedData
         enet_uint32 totalReceivedPackets
         ENetInterceptCallback intercept
+        ENetChecksumCallback checksum
 
     ctypedef enum ENetEventType:
         ENET_EVENT_TYPE_NONE = 0
@@ -141,6 +142,9 @@ cdef extern from "enet/enet.h":
     # Global functions
     int enet_initialize()
     void enet_deinitialize()
+
+    #checksum callback
+    enet_uint32 enet_crc32(const ENetBuffer *, size_t)
 
     # Address functions
     int enet_address_set_host(ENetAddress *address, char *hostName)
@@ -200,6 +204,8 @@ PEER_STATE_DISCONNECT_LATER = ENET_PEER_STATE_DISCONNECT_LATER
 PEER_STATE_DISCONNECTING = ENET_PEER_STATE_DISCONNECTING
 PEER_STATE_ACKNOWLEDGING_DISCONNECT = ENET_PEER_STATE_ACKNOWLEDGING_DISCONNECT
 PEER_STATE_ZOMBIE = ENET_PEER_STATE_ZOMBIE
+
+ENET_CRC32 = 1
 
 cdef class Address
 
@@ -857,6 +863,8 @@ cdef class Host:
     cdef object _interceptCallback
     cdef object __weakref__
 
+    cdef int _checksum
+
     def __init__ (self, Address address=None, peerCount=0, channelLimit=0,
         incomingBandwidth=0, outgoingBandwidth=0):
 
@@ -868,6 +876,7 @@ cdef class Host:
         if not self._enet_host:
             raise MemoryError("Unable to create host structure!")
         self.dealloc = True
+        self._checksum = 0
 
         global host_static_instances
         host_static_instances[<uintptr_t>self._enet_host] = self
@@ -967,7 +976,7 @@ cdef class Host:
         """
 
         if self._enet_host:
-            return enet_host_compress_with_range_coder(self._enet_host);
+            return enet_host_compress_with_range_coder(self._enet_host)
 
     property socket:
         def __get__(self):
@@ -1058,6 +1067,16 @@ cdef class Host:
                 self._enet_host.intercept = intercept_callback
             self._interceptCallback = value
 
+    property checksum:
+        def __get__(self):
+            return self._checksum
+        def __set__(self, value):
+            if value is None:
+                self._enet_host.checksum = NULL
+            else:
+                if value == ENET_CRC32:
+                    self._enet_host.checksum = enet_crc32
+            self._checksum = value
 
 cdef int __cdecl intercept_callback(ENetHost *host, ENetEvent *event) except -1:
     cdef Address address = Address(None, 0)
