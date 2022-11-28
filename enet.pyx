@@ -573,7 +573,7 @@ cdef class Peer:
     property data:
         def __get__(self):
             if self.check_valid():
-                return self._enet_peer.data
+                return self._enet_peer.data if self._enet_peer.data else None
 
         def __set__(self, value):
             if self.check_valid():

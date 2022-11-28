@@ -1,6 +1,7 @@
 import unittest
 import enet
 
+
 class TestAddress(unittest.TestCase):
     def test_host(self):
         self.assertEquals(enet.Address("127.0.0.1", 9999).host, "127.0.0.1")
@@ -14,16 +15,26 @@ class TestAddress(unittest.TestCase):
 
     def test_hostname(self):
         import socket
-        self.assertEquals(enet.Address(socket.gethostname(), 9999).hostname, socket.gethostname())
+
+        self.assertEquals(
+            enet.Address(socket.gethostname(), 9999).hostname, socket.gethostname()
+        )
         self.assertEquals(enet.Address(None, 9999).hostname, "*")
 
     def test_str(self):
         self.assertEquals(enet.Address("127.0.0.1", 9999).__str__(), "127.0.0.1:9999")
 
     def test_richcmp(self):
-        self.assertTrue(enet.Address("127.0.0.1", 9999) == enet.Address("127.0.0.1", 9999))
-        self.assertTrue(enet.Address("127.0.0.1", 9999) != enet.Address("127.0.0.1", 8888))
-        self.assertFalse(enet.Address("127.1.1.1", 1992) == enet.Address("127.0.0.1", 9999))
+        self.assertTrue(
+            enet.Address("127.0.0.1", 9999) == enet.Address("127.0.0.1", 9999)
+        )
+        self.assertTrue(
+            enet.Address("127.0.0.1", 9999) != enet.Address("127.0.0.1", 8888)
+        )
+        self.assertFalse(
+            enet.Address("127.1.1.1", 1992) == enet.Address("127.0.0.1", 9999)
+        )
+
 
 class TestPacket(unittest.TestCase):
     def test_data(self):
@@ -37,8 +48,12 @@ class TestPacket(unittest.TestCase):
 
     def test_flags(self):
         self.assertEquals(enet.Packet(b"foobar").flags, 0)
-        self.assertEquals(enet.Packet(b"foobar", enet.PACKET_FLAG_UNSEQUENCED).flags, enet.PACKET_FLAG_UNSEQUENCED)
+        self.assertEquals(
+            enet.Packet(b"foobar", enet.PACKET_FLAG_UNSEQUENCED).flags,
+            enet.PACKET_FLAG_UNSEQUENCED,
+        )
         self.assertRaises(MemoryError, getattr, enet.Packet(), "flags")
+
 
 class TestHost(unittest.TestCase):
     def setUp(self):
@@ -81,7 +96,7 @@ class TestHost(unittest.TestCase):
                 # error messages are not propagating
                 # through cython
                 print("data != statusResponse")
-                assert(False)
+                assert False
             self.send_done = True
 
         while not self.send_done:
@@ -92,7 +107,6 @@ class TestHost(unittest.TestCase):
             event = self.server.service(0)
             if event.type == enet.EVENT_TYPE_CONNECT:
                 self.server.intercept = f
-
 
     def test_broadcast(self):
         broadcast_done = False
@@ -108,6 +122,7 @@ class TestHost(unittest.TestCase):
             if event.type == enet.EVENT_TYPE_CONNECT:
                 self.assertEquals(event.peer.state, enet.PEER_STATE_CONNECTED)
                 self.server.broadcast(0, enet.Packet(broadcast_msg))
+
 
 class TestPeer(unittest.TestCase):
     def setUp(self):
@@ -187,5 +202,6 @@ class TestPeer(unittest.TestCase):
             if event.type == enet.EVENT_TYPE_CONNECT:
                 self.assertEquals(event.peer.state, enet.PEER_STATE_CONNECTED)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
