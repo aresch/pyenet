@@ -92,4 +92,4 @@ ENV/
 
 # Pyenet specific files
 enet.c
-enet/
+enet_src/
