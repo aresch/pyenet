@@ -370,21 +370,21 @@ cdef class Packet:
             if self.is_valid():
                 return (<char *>self._enet_packet.data)[:self._enet_packet.dataLength]
             else:
-                raise MemoryError("Packet has not been initiliazed properly!")
+                raise MemoryError("Packet has not been initialized properly!")
 
     property dataLength:
         def __get__(self):
             if self.is_valid():
                 return self._enet_packet.dataLength
             else:
-                raise MemoryError("Packet has not been initiliazed properly!")
+                raise MemoryError("Packet has not been initialized properly!")
 
     property flags:
         def __get__(self):
             if self.is_valid():
                 return self._enet_packet.flags
             else:
-                raise MemoryError("Packet has not been initiliazed properly!")
+                raise MemoryError("Packet has not been initialized properly!")
 
     property sent:
         def __get__(self):
