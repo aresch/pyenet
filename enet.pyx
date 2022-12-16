@@ -3,6 +3,10 @@ import atexit
 from cpython cimport bool
 from libc.stdint cimport uintptr_t
 
+cdef extern from "Python.h":
+    cdef void Py_INCREF(object o)
+    cdef void Py_DECREF(object o)
+
 cdef extern from "enet/types.h":
     ctypedef unsigned char enet_uint8
     ctypedef unsigned short enet_uint16
@@ -30,6 +34,7 @@ cdef extern from "enet/enet.h":
 
     ctypedef enet_uint32 (__cdecl *ENetChecksumCallback) (const ENetBuffer * buffers, size_t bufferCount)
     ctypedef int (__cdecl *ENetInterceptCallback) (ENetHost *host, ENetEvent *event) except -1 # __cdecl is standard on unix and overwriten for win32
+    ctypedef void (__cdecl *ENetPacketFreeCallback) (ENetPacket *)
 
     ctypedef struct ENetAddress:
         enet_uint32 host
@@ -46,6 +51,8 @@ cdef extern from "enet/enet.h":
         enet_uint32 flags
         enet_uint8 *data
         size_t dataLength
+        ENetPacketFreeCallback freeCallback
+        void* userData
 
     ctypedef enum ENetPeerState:
         ENET_PEER_STATE_DISCONNECTED = 0
@@ -313,6 +320,12 @@ cdef class Address:
         def __set__(self, value):
             self._enet_address.port = value
 
+cdef void __cdecl _packet_free_callback(ENetPacket* packet) with gil:
+    cdef object func = <object>packet.userData
+    func()
+    # the packet is about to be destroyed, so decrease the refcount
+    Py_DECREF(func)
+
 cdef class Packet:
     """
     Packet (str dataContents, int flags)
@@ -364,6 +377,12 @@ cdef class Packet:
             return True
         else:
             return False
+
+    def set_free_callback(self, func):
+        self._enet_packet.freeCallback = _packet_free_callback
+        Py_INCREF(func)
+        # we're storing a reference, and need to INCREF accordingly
+        self._enet_packet.userData = <void*>func
 
     property data:
         def __get__(self):
